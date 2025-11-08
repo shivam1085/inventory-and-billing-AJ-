@@ -1,0 +1,46 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}Customers - Auto Parts Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Customers</h1>
+    <a href="{% url 'customer_create' %}" class="btn btn-primary">Add Customer</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.phone|default:'-' }}</td>
+                        <td>{{ customer.email|default:'-' }}</td>
+                        <td>{{ customer.address|default:'-' }}</td>
+                        <td>
+                            <a href="{% url 'create_sale' %}?customer={{ customer.id }}" class="btn btn-sm btn-success">New Sale</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No customers found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
