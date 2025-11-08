@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: inventory-billing
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn autoparts.wsgi:application
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        value: django-insecure-b1lr4=m@f!dfy^wp24g+-41k_ta2==8r&uj-v&jp00t21)*6h#
+      - key: DJANGO_DEBUG
+        value: False
+      - key: DATABASE_URL
+        value: ${{ Postgres.DATABASE_URL }}
+      - key: CLOUDINARY_CLOUD_NAME
+        value: shivam1085
+      - key: CLOUDINARY_API_KEY
+        value: 839322377597543
+      - key: CLOUDINARY_API_SECRET
+        value: s6K7FGz4TFZGhdXpzqKumY9Vmxw

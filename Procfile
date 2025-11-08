@@ -1,0 +1,1 @@
+web: gunicorn autoparts.wsgi:application --log-file -

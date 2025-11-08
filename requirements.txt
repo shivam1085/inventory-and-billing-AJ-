@@ -1,0 +1,8 @@
+django>=5.2.8
+psycopg2-binary
+python-dotenv
+dj-database-url
+whitenoise
+gunicorn
+cloudinary
+django-cloudinary-storage
