@@ -2,13 +2,7 @@ services:
 - type: web
   name: inventory-billing
   env: python
-  buildCommand: |
-    echo "Installing dependencies..."
-    pip install -r requirements.txt
-    echo "Collecting static files..."
-    python manage.py collectstatic --no-input
-    echo "Running migrations..."
-    python manage.py migrate
+  buildCommand: bash -c "pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate"
   startCommand: gunicorn autoparts.wsgi:application
   envVars:
   - key: PYTHON_VERSION
