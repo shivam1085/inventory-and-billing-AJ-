@@ -6,3 +6,5 @@ whitenoise
 gunicorn
 cloudinary
 django-cloudinary-storage
+django-crispy-forms
+crispy-bootstrap4
