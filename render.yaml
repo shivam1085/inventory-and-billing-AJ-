@@ -2,13 +2,8 @@ services:
 - type: web
   name: inventory-billing
   env: python
-  python_version: 3.9.12
-  buildCommand: |
-    curl -sSL https://install.python-poetry.org | python3 -
-    poetry install
-    poetry run python manage.py collectstatic --noinput
-    poetry run python manage.py migrate
-  startCommand: poetry run gunicorn autoparts.wsgi:application
+  buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+  startCommand: gunicorn autoparts.wsgi:application
   envVars:
   - key: PYTHON_VERSION
     value: 3.9.12
