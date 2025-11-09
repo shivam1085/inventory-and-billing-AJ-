@@ -22,13 +22,10 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') + [
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['*']  # Allow all hosts during development
 
 # Configure CSRF trusted origins for secure form submissions
-CSRF_TRUSTED_ORIGINS = [f'https://{host.strip()}' for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com', 'http://localhost:8080', 'http://127.0.0.1:8080']
 
 # Security Settings
 if not DEBUG:
