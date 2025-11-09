@@ -22,14 +22,13 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    'inventory-billing.onrender.com',
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') + [
     'localhost',
     '127.0.0.1',
 ]
 
 # Configure CSRF trusted origins for secure form submissions
-CSRF_TRUSTED_ORIGINS = ['https://inventory-billing.onrender.com']
+CSRF_TRUSTED_ORIGINS = [f'https://{host.strip()}' for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host.strip()]
 
 # Security Settings
 if not DEBUG:
@@ -96,10 +95,10 @@ WSGI_APPLICATION = 'autoparts.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:////' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 

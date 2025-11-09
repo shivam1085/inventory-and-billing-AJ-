@@ -12,7 +12,7 @@ services:
   - key: DJANGO_DEBUG
     value: "False"
   - key: DJANGO_ALLOWED_HOSTS
-    value: ".onrender.com"
+    value: "inventory-billing.onrender.com"
   - key: DATABASE_URL
     value: ${{ Postgres.DATABASE_URL }}
   - key: CLOUDINARY_CLOUD_NAME
