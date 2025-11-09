@@ -2,7 +2,12 @@
 # exit on error
 set -o errexit
 
-pip install -r requirements.txt
+# Install poetry
+curl -sSL https://install.python-poetry.org | python3 -
 
-python manage.py collectstatic --no-input
-python manage.py migrate
+# Install dependencies
+poetry install
+
+# Run Django commands
+poetry run python manage.py collectstatic --no-input
+poetry run python manage.py migrate

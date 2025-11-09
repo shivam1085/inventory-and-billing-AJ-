@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "inventory-billing"
+version = "0.1.0"
+description = "Inventory and Billing System"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "5.2.8"
+psycopg2-binary = "2.9.11"
+python-dotenv = "1.2.1"
+dj-database-url = "3.0.1"
+whitenoise = "6.11.0"
+gunicorn = "23.0.0"
+django-crispy-forms = "2.1"
+crispy-bootstrap4 = "2023.1"
+cloudinary = "1.44.1"
+django-cloudinary-storage = "0.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
