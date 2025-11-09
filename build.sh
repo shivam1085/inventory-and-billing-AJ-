@@ -1,13 +1,11 @@
-﻿#!/usr/bin/env bash
-# exit on error
+﻿#!/bin/bash
 set -o errexit
 
-# Install poetry
-curl -sSL https://install.python-poetry.org | python3 -
+echo "Installing dependencies..."
+pip install -r requirements.txt
 
-# Install dependencies
-poetry install
+echo "Collecting static files..."
+python manage.py collectstatic --no-input
 
-# Run Django commands
-poetry run python manage.py collectstatic --no-input
-poetry run python manage.py migrate
+echo "Running migrations..."
+python manage.py migrate
