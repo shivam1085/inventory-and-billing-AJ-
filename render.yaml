@@ -2,12 +2,16 @@ services:
 - type: web
   name: inventory-billing
   env: python
+  python_version: 3.9.12
   buildCommand: |
-    pip install -r requirements.txt
-    python manage.py collectstatic --noinput
-    python manage.py migrate
-  startCommand: gunicorn autoparts.wsgi:application
+    curl -sSL https://install.python-poetry.org | python3 -
+    poetry install
+    poetry run python manage.py collectstatic --noinput
+    poetry run python manage.py migrate
+  startCommand: poetry run gunicorn autoparts.wsgi:application
   envVars:
+  - key: PYTHON_VERSION
+    value: 3.9.12
   - key: DJANGO_SECRET_KEY
     value: django-insecure-b1lr4=m@f!dfy^wp24g+-41k_ta2==8r&uj-v&jp00t21)*6h#
   - key: DJANGO_DEBUG
