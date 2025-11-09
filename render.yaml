@@ -2,8 +2,9 @@ services:
 - type: web
   name: inventory-billing
   env: python
-  buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
-  startCommand: gunicorn autoparts.wsgi:application
+  buildCommand: pip install -r requirements.txt
+  startCommand: bash -c "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn autoparts.wsgi:application"
+  release: ./release-commands.sh
   envVars:
   - key: PYTHON_VERSION
     value: 3.9.12
