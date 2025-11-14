@@ -7,7 +7,8 @@ from .models import Product, Customer, Sale, SaleItem
 from .forms import ProductForm, CustomerForm, SaleForm, SaleItemFormSet
 from .firestore_repo import (
     upsert_product, upsert_customer, write_sale_and_sync_products,
-    get_sale_for_receipt, list_products, list_customers
+    get_sale_for_receipt, list_products, list_customers,
+    reserve_and_decrement_stock, list_recent_sales
 )
 from .firebase import firebase_sor_enabled
 
@@ -112,26 +113,49 @@ def create_sale(request):
         item_formset = SaleItemFormSet(request.POST)
         
         if sale_form.is_valid() and item_formset.is_valid():
+            # Aggregate requested quantities per product
+            requested = {}
+            cleaned_items = []
+            for form in item_formset:
+                if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                    prod = form.cleaned_data['product']
+                    qty = int(form.cleaned_data['quantity'])
+                    requested[prod.id] = requested.get(prod.id, 0) + qty
+                    cleaned_items.append(form)
+
+            # If using Firestore as SoR, perform transactional stock check/decrement first
+            if firebase_sor_enabled():
+                try:
+                    _new_qty_map = reserve_and_decrement_stock(requested)
+                except ValueError as ve:
+                    messages.error(request, str(ve))
+                    transaction.set_rollback(True)
+                    return redirect('create_sale')
+                except Exception:
+                    messages.error(request, 'Stock check failed. Please try again.')
+                    transaction.set_rollback(True)
+                    return redirect('create_sale')
+
             sale = sale_form.save(commit=False)
             sale.total_amount = 0
             sale.save()
-            
+
             total = 0
-            for form in item_formset:
-                if form.cleaned_data and not form.cleaned_data.get('DELETE'):
-                    item = form.save(commit=False)
-                    item.sale = sale
-                    item.unit_price = item.product.selling_price
-                    
-                    # Validate stock availability
+            for form in cleaned_items:
+                item = form.save(commit=False)
+                item.sale = sale
+                item.unit_price = item.product.selling_price
+
+                # Validate stock when not using Firestore SoR
+                if not firebase_sor_enabled():
                     if item.quantity > item.product.quantity:
                         messages.error(request, f'Only {item.product.quantity} units available for {item.product.name}')
                         transaction.set_rollback(True)
                         return redirect('create_sale')
-                    
-                    item.save()
-                    total += item.total_price
-            
+
+                item.save()
+                total += item.total_price
+
             sale.total_amount = total
             sale.save()
             # Write canonical sale and mirror product quantities in Firestore (best-effort)
@@ -139,7 +163,7 @@ def create_sale(request):
                 write_sale_and_sync_products(sale)
             except Exception:
                 pass
-            
+
             messages.success(request, f'Sale #{sale.invoice_number} created successfully.')
             return redirect('sale_receipt', pk=sale.pk)
     else:
@@ -166,11 +190,29 @@ def sale_receipt(request, pk):
     return HttpResponse(html)
 
 def dashboard(request):
-    context = {
-        'total_products': Product.objects.count(),
-        'low_stock_products': Product.objects.filter(quantity__lte=5),
-        'recent_sales': Sale.objects.order_by('-created_at')[:5],
-    }
+    if firebase_sor_enabled():
+        try:
+            products = list_products()
+            total_products = len(products)
+            low_stock_products = [p for p in products if int(p.get('quantity', 0)) <= 5]
+            recent = list_recent_sales(5)
+            context = {
+                'total_products': total_products,
+                'low_stock_products': low_stock_products,
+                'recent_sales': recent,
+            }
+        except Exception:
+            context = {
+                'total_products': Product.objects.count(),
+                'low_stock_products': Product.objects.filter(quantity__lte=5),
+                'recent_sales': Sale.objects.order_by('-created_at')[:5],
+            }
+    else:
+        context = {
+            'total_products': Product.objects.count(),
+            'low_stock_products': Product.objects.filter(quantity__lte=5),
+            'recent_sales': Sale.objects.order_by('-created_at')[:5],
+        }
     return render(request, 'inventory/dashboard.html', context)
 
 

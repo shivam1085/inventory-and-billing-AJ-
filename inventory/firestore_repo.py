@@ -3,6 +3,12 @@ from types import SimpleNamespace
 from typing import List, Optional, Dict, Any
 
 from .firebase import get_firestore_client, firebase_enabled
+from typing import Tuple
+try:
+    # Optional import; functions that need transactions will guard usage
+    from google.cloud import firestore as gcfirestore
+except Exception:  # pragma: no cover - library may not be present locally
+    gcfirestore = None
 
 
 def firebase_sor_enabled() -> bool:
@@ -61,6 +67,41 @@ def get_product(product_id: int) -> Optional[Dict[str, Any]]:
     d = doc.to_dict()
     d['id'] = product_id
     return d
+
+
+def reserve_and_decrement_stock(requested: Dict[int, int]) -> Dict[int, int]:
+    """Perform a Firestore transaction to check and decrement stock atomically.
+
+    requested: {product_id: quantity_to_decrement}
+    Returns: {product_id: new_quantity_after_decrement}
+    Raises ValueError on insufficient stock or RuntimeError if Firestore unavailable.
+    """
+    db = get_firestore_client()
+    if not db or not gcfirestore:
+        raise RuntimeError('Firestore not available for transactional stock update')
+
+    transaction = db.transaction()
+
+    @gcfirestore.transactional
+    def _apply(tx, _db, req: Dict[int, int]) -> Dict[int, int]:
+        new_qty_map: Dict[int, int] = {}
+        # Deterministic order to avoid deadlocks
+        for pid in sorted(req.keys(), key=lambda x: int(x)):
+            need = int(req[pid])
+            ref = _db.collection('products').document(str(pid))
+            snap = ref.get(transaction=tx)
+            data = snap.to_dict() or {}
+            current = int(data.get('quantity', 0))
+            if need <= 0:
+                continue
+            if need > current:
+                raise ValueError(f'Insufficient stock for product {data.get("name", pid)}: need {need}, have {current}')
+            new_q = current - need
+            tx.update(ref, {'quantity': new_q})
+            new_qty_map[pid] = new_q
+        return new_qty_map
+
+    return _apply(transaction, db, requested)
 
 
 # ---------- Customers ----------
@@ -170,3 +211,29 @@ def get_sale_for_receipt(sale_id: int) -> Optional[SimpleNamespace]:
         'items': items,
     })
     return sale_obj
+
+
+def list_recent_sales(limit: int = 5) -> list[dict]:
+    """Fetch recent sales from Firestore for dashboard widgets."""
+    db = get_firestore_client()
+    if not db:
+        return []
+    try:
+        # Order by ISO datetime string is acceptable for ISO-8601 format
+        direction = gcfirestore.Query.DESCENDING if gcfirestore else None
+        q = db.collection('sales').order_by('date', direction=direction).limit(limit)
+        docs = q.stream()
+    except Exception:
+        return []
+    results: list[dict] = []
+    for doc in docs:
+        d = doc.to_dict() or {}
+        d['id'] = d.get('id') or doc.id
+        results.append({
+            'id': d.get('id'),
+            'invoice_number': d.get('invoice_number'),
+            'customer_name': d.get('customer_name'),
+            'total_amount': d.get('total_amount'),
+            'date': d.get('date'),
+        })
+    return results
