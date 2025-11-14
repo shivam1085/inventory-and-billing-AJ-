@@ -107,9 +107,12 @@ if RAW_DATABASE_URL:
         )
     }
 else:
-    # SQLite fallback. In production, consider pointing this to a persistent disk
-    # by setting SQLITE_PATH (e.g., /var/data/db.sqlite3 on Render with a mounted disk).
+    # SQLite fallback. In production on Render, prefer a mounted disk at /var/data.
+    # If SQLITE_PATH is not provided but we detect Render, default to /var/data/db.sqlite3.
     SQLITE_PATH = os.environ.get('SQLITE_PATH')
+    on_render = bool(os.environ.get('RENDER') or os.environ.get('RENDER_INTERNAL_HOSTNAME'))
+    if not SQLITE_PATH and on_render:
+        SQLITE_PATH = '/var/data/db.sqlite3'
     sqlite_name = Path(SQLITE_PATH) if SQLITE_PATH else (BASE_DIR / 'db.sqlite3')
     # Ensure directory exists to avoid 'unable to open database file' errors.
     try:
