@@ -13,10 +13,10 @@ services:
     value: "False"
   - key: DJANGO_ALLOWED_HOSTS
     value: "*"
-  - key: DATABASE_URL
-    fromDatabase:
-      name: inventory_db
-      property: connectionString
+  - key: SKIP_DB_CHECK
+    value: "true"
+  - key: SQLITE_PATH
+    value: "/var/data/db.sqlite3"
   - key: CLOUDINARY_CLOUD_NAME
     value: shivam1085
   - key: CLOUDINARY_API_KEY
@@ -24,7 +24,8 @@ services:
   - key: CLOUDINARY_API_SECRET
     value: s6K7FGz4TFZGhdXpzqKumY9Vmxw
 
-databases:
-- name: inventory_db
-  plan: free
-  ipAllowList: []
+  disk:
+    name: data
+    mountPath: /var/data
+    sizeGB: 1
+
