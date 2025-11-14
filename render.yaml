@@ -3,9 +3,9 @@ services:
   name: inventory-billing
   env: python
   # Build: install deps + collectstatic only (no migrate; DB may not be accessible yet)
-  buildCommand: bash -c "pip install -r requirements.txt && python manage.py collectstatic --no-input"
+  buildCommand: bash scripts/render-build.sh
   # Start: run migrations then start gunicorn
-  startCommand: bash -c "python manage.py migrate --no-input && gunicorn autoparts.wsgi:application"
+  startCommand: bash scripts/render-start.sh
   envVars:
   - key: PYTHON_VERSION
     value: 3.13.0
