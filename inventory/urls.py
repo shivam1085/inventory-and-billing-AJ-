@@ -3,6 +3,7 @@ from . import views, api
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('health/db/', views.db_status, name='db_status'),
     path('products/', views.product_list, name='product_list'),
     path('products/create/', views.product_create, name='product_create'),
     path('products/<int:pk>/edit/', views.product_edit, name='product_edit'),
