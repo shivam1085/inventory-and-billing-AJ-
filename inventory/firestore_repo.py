@@ -15,6 +15,20 @@ def _ns(d: Dict[str, Any]) -> SimpleNamespace:
 
 
 # ---------- Products ----------
+def list_products() -> list[dict]:
+    db = get_firestore_client()
+    if not db:
+        return []
+    docs = db.collection('products').order_by('name').stream()
+    results: list[dict] = []
+    for doc in docs:
+        d = doc.to_dict() or {}
+        # ensure id/pk present for templates/links
+        pid = d.get('id') or (doc.id.isdigit() and int(doc.id) or doc.id)
+        d['id'] = pid
+        d['pk'] = pid
+        results.append(d)
+    return results
 
 def upsert_product(product) -> None:
     """Create/update a product document mirroring the Django model.
@@ -50,6 +64,19 @@ def get_product(product_id: int) -> Optional[Dict[str, Any]]:
 
 
 # ---------- Customers ----------
+def list_customers() -> list[dict]:
+    db = get_firestore_client()
+    if not db:
+        return []
+    docs = db.collection('customers').order_by('name').stream()
+    results: list[dict] = []
+    for doc in docs:
+        d = doc.to_dict() or {}
+        cid = d.get('id') or (doc.id.isdigit() and int(doc.id) or doc.id)
+        d['id'] = cid
+        d['pk'] = cid
+        results.append(d)
+    return results
 
 def upsert_customer(customer) -> None:
     db = get_firestore_client()

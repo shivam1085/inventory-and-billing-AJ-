@@ -5,11 +5,20 @@ from django.template.loader import render_to_string
 from django.db import transaction
 from .models import Product, Customer, Sale, SaleItem
 from .forms import ProductForm, CustomerForm, SaleForm, SaleItemFormSet
-from .firestore_repo import upsert_product, upsert_customer, write_sale_and_sync_products, get_sale_for_receipt
+from .firestore_repo import (
+    upsert_product, upsert_customer, write_sale_and_sync_products,
+    get_sale_for_receipt, list_products, list_customers
+)
 from .firebase import firebase_sor_enabled
 
 def product_list(request):
-    products = Product.objects.all().order_by('name')
+    if firebase_sor_enabled():
+        try:
+            products = list_products()
+        except Exception:
+            products = Product.objects.all().order_by('name')
+    else:
+        products = Product.objects.all().order_by('name')
     return render(request, 'inventory/product_list.html', {'products': products})
 
 def product_create(request):
@@ -45,7 +54,13 @@ def product_edit(request, pk):
     return render(request, 'inventory/product_form.html', {'form': form})
 
 def customer_list(request):
-    customers = Customer.objects.all().order_by('name')
+    if firebase_sor_enabled():
+        try:
+            customers = list_customers()
+        except Exception:
+            customers = Customer.objects.all().order_by('name')
+    else:
+        customers = Customer.objects.all().order_by('name')
     return render(request, 'inventory/customer_list.html', {'customers': customers})
 
 def customer_create(request):
