@@ -17,6 +17,20 @@ services:
     value: "true"
   - key: SQLITE_PATH
     value: "/var/data/db.sqlite3"
+  # Firestore / Firebase configuration (fill these in via the Render Dashboard)
+  - key: FIREBASE_ENABLED
+    value: "false"
+  - key: FIREBASE_PROJECT_ID
+    value: ""
+  - key: FIREBASE_CRED_JSON
+    value: "" # Set full JSON string as value in dashboard
+  - key: FIREBASE_SOR
+    value: "false" # Flip to true after backfill and verification
+  # Health endpoint tokens (optional, recommended)
+  - key: DB_STATUS_TOKEN
+    value: ""
+  - key: FIREBASE_STATUS_TOKEN
+    value: ""
   - key: CLOUDINARY_CLOUD_NAME
     value: shivam1085
   - key: CLOUDINARY_API_KEY
@@ -28,4 +42,3 @@ services:
     name: data
     mountPath: /var/data
     sizeGB: 1
-
