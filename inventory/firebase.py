@@ -46,3 +46,6 @@ def get_firestore_client() -> Optional["firestore.Client"]:
 
 def firebase_enabled() -> bool:
     return os.environ.get('FIREBASE_ENABLED', 'false').lower() in ('1', 'true', 'yes')
+
+def firebase_sor_enabled() -> bool:
+    return firebase_enabled() and os.environ.get('FIREBASE_SOR', 'false').lower() in ('1', 'true', 'yes')

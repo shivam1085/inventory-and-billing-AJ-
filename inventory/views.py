@@ -5,6 +5,8 @@ from django.template.loader import render_to_string
 from django.db import transaction
 from .models import Product, Customer, Sale, SaleItem
 from .forms import ProductForm, CustomerForm, SaleForm, SaleItemFormSet
+from .firestore_repo import upsert_product, upsert_customer, write_sale_and_sync_products, get_sale_for_receipt
+from .firebase import firebase_sor_enabled
 
 def product_list(request):
     products = Product.objects.all().order_by('name')
@@ -14,7 +16,12 @@ def product_create(request):
     if request.method == 'POST':
         form = ProductForm(request.POST)
         if form.is_valid():
-            form.save()
+            product = form.save()
+            # Mirror to Firestore (best-effort)
+            try:
+                upsert_product(product)
+            except Exception:
+                pass
             messages.success(request, 'Product created successfully.')
             return redirect('product_list')
     else:
@@ -26,7 +33,11 @@ def product_edit(request, pk):
     if request.method == 'POST':
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
-            form.save()
+            product = form.save()
+            try:
+                upsert_product(product)
+            except Exception:
+                pass
             messages.success(request, 'Product updated successfully.')
             return redirect('product_list')
     else:
@@ -41,7 +52,11 @@ def customer_create(request):
     if request.method == 'POST':
         form = CustomerForm(request.POST)
         if form.is_valid():
-            form.save()
+            customer = form.save()
+            try:
+                upsert_customer(customer)
+            except Exception:
+                pass
             messages.success(request, 'Customer created successfully.')
             return redirect('customer_list')
     else:
@@ -62,6 +77,10 @@ def create_sale(request):
             customer_form = CustomerForm(request.POST)
             if customer_form.is_valid():
                 customer = customer_form.save()
+                try:
+                    upsert_customer(customer)
+                except Exception:
+                    pass
                 return JsonResponse({
                     'success': True,
                     'customer_id': customer.id,
@@ -100,6 +119,11 @@ def create_sale(request):
             
             sale.total_amount = total
             sale.save()
+            # Write canonical sale and mirror product quantities in Firestore (best-effort)
+            try:
+                write_sale_and_sync_products(sale)
+            except Exception:
+                pass
             
             messages.success(request, f'Sale #{sale.invoice_number} created successfully.')
             return redirect('sale_receipt', pk=sale.pk)
@@ -115,7 +139,14 @@ def create_sale(request):
     })
 
 def sale_receipt(request, pk):
-    sale = get_object_or_404(Sale, pk=pk)
+    sale = None
+    if firebase_sor_enabled():
+        try:
+            sale = get_sale_for_receipt(pk)
+        except Exception:
+            sale = None
+    if not sale:
+        sale = get_object_or_404(Sale, pk=pk)
     html = render_to_string('inventory/receipt.html', {'sale': sale})
     return HttpResponse(html)
 
