@@ -51,6 +51,8 @@ def customer_create(request):
 from django.http import JsonResponse
 from django.db import connection
 import os
+from .firebase import get_firestore_client, firebase_enabled
+from django.utils import timezone
 
 @transaction.atomic
 def create_sale(request):
@@ -166,4 +168,46 @@ def db_status(request):
         },
         'connected_to_postgres': vendor == 'postgresql' or (engine and 'postgresql' in engine),
         'version': version,
+    })
+
+
+def firebase_status(request):
+    """Return JSON with Firebase/Firestore status, optional write test.
+    Protected by token: query param `token` must match FIREBASE_STATUS_TOKEN
+    (falls back to DB_STATUS_TOKEN if the former is not set).
+    Optional: provide write=1 to write a health document.
+    """
+    expected = os.environ.get('FIREBASE_STATUS_TOKEN') or os.environ.get('DB_STATUS_TOKEN')
+    supplied = request.GET.get('token')
+    if not expected or supplied != expected:
+        return HttpResponse('Forbidden', status=403)
+
+    enabled = firebase_enabled()
+    client = get_firestore_client()
+    error = None
+    ok = bool(client)
+
+    write_attempted = False
+    write_ok = None
+    if ok and request.GET.get('write') in ('1', 'true', 'yes'):
+        write_attempted = True
+        try:
+            client.collection('health_checks').add({
+                'source': 'inventory-app',
+                'timestamp': timezone.now().isoformat(),
+            })
+            write_ok = True
+        except Exception as exc:
+            error = f'Write failed: {exc}'
+            write_ok = False
+
+    if not ok and not error:
+        error = 'Firestore client not initialized (check env vars and library)'
+
+    return JsonResponse({
+        'enabled': enabled,
+        'client_initialized': ok,
+        'write_attempted': write_attempted,
+        'write_ok': write_ok,
+        'error': error,
     })
