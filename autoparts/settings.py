@@ -117,6 +117,11 @@ else:
     # Ensure directory exists to avoid 'unable to open database file' errors.
     try:
         sqlite_dir = sqlite_name.parent
+        # If path is under /var/ but directory is not writable (free tier, no disk),
+        # fall back to project-local db.sqlite3 to avoid OperationalError.
+        if str(sqlite_dir).startswith('/var/') and (not os.access('/var', os.W_OK)):
+            sqlite_name = BASE_DIR / 'db.sqlite3'
+            sqlite_dir = sqlite_name.parent
         sqlite_dir.mkdir(parents=True, exist_ok=True)
     except Exception as _e:
         # Don't crash settings import; migration will surface errors if path truly invalid.
