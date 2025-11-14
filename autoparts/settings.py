@@ -89,21 +89,31 @@ WSGI_APPLICATION = 'autoparts.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Data loss on Render typically happens if the app is still using SQLite (file reset on deploy).
+# We prefer Postgres whenever DATABASE_URL is provided; fall back to SQLite ONLY for local dev.
+# We also normalize legacy 'postgres://' URLs to 'postgresql://' per SQLAlchemy & some tooling expectations.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+RAW_DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if RAW_DATABASE_URL:
+    # Normalize scheme if needed
+    if RAW_DATABASE_URL.startswith('postgres://'):
+        RAW_DATABASE_URL = RAW_DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    DATABASES = {
+        'default': dj_database_url.parse(
+            RAW_DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG  # require SSL in production
+        )
     }
-}
-
-# Update database configuration from $DATABASE_URL environment variable (if defined)
-if os.environ.get('DATABASE_URL'):
-    DATABASES['default'] = dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+else:
+    # Local fallback (persistent between runs on your machine)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
