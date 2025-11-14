@@ -8,3 +8,9 @@ class InventoryConfig(AppConfig):
     def ready(self):
         # Register system checks
         from . import checks  # noqa: F401
+        # Register signals (e.g., Firebase logging)
+        try:
+            from . import signals  # noqa: F401
+        except Exception:
+            # Signals are optional and should never block app startup
+            pass
