@@ -146,7 +146,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard' %}">
-            <img src="{% static 'inventory/images/logo.png' %}" alt="AJ Autoparts Logo" style="height: 48px; width: 48px; object-fit: contain; background-color: #ffffff; padding: 4px; border-radius: 4px;">
+                <div class="logo-container me-2" style="height: 48px; width: 48px; background-color: #ffffff; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    <img src="{% static 'inventory/images/logo.png' %}" alt="AJ Autoparts Logo" style="height: 100%; width: 100%; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div style="display: none; color: #000; font-weight: bold; font-size: 12px;">AJ</div>
+                </div>
                 <span>AJ Autoparts</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
