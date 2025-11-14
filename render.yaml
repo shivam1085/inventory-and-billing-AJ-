@@ -2,31 +2,32 @@ services:
 - type: web
   name: inventory-billing
   env: python
-  buildCommand: bash -c "pip install -r requirements.txt && SKIP_DB_CHECK=true python manage.py collectstatic --no-input"
-  startCommand: bash -c "mkdir -p /var/data && python manage.py migrate --no-input && gunicorn autoparts.wsgi:application"
+  # Build: install deps + collectstatic only (no migrate; DB may not be accessible yet)
+  buildCommand: bash -c "pip install -r requirements.txt && python manage.py collectstatic --no-input"
+  # Start: run migrations then start gunicorn
+  startCommand: bash -c "python manage.py migrate --no-input && gunicorn autoparts.wsgi:application"
   envVars:
   - key: PYTHON_VERSION
-    value: 3.9.12
+    value: 3.13.0
   - key: DJANGO_SECRET_KEY
-    value: django-insecure-b1lr4=m@f!dfy^wp24g+-41k_ta2==8r&uj-v&jp00t21)*6h#
+    value: ${DJANGO_SECRET_KEY}
   - key: DJANGO_DEBUG
     value: "False"
   - key: DJANGO_ALLOWED_HOSTS
     value: "*"
-  - key: SKIP_DB_CHECK
-    value: "true"
-  - key: SQLITE_PATH
-    value: "/var/data/db.sqlite3"
+  # External Postgres (set this in dashboard with real URL, e.g. postgres://user:pass@host/dbname)
+  - key: DATABASE_URL
+    value: ""
   # Firestore / Firebase configuration (fill these in via the Render Dashboard)
   - key: FIREBASE_ENABLED
     value: "false"
   - key: FIREBASE_PROJECT_ID
     value: ""
   - key: FIREBASE_CRED_JSON
-    value: "" # Set full JSON string as value in dashboard
+    value: "" # Full JSON service account string (DO NOT COMMIT)
   - key: FIREBASE_SOR
-    value: "false" # Flip to true after backfill and verification
-  # Health endpoint tokens (optional, recommended)
+    value: "false" # Flip to true only after backfill
+  # Health endpoint tokens
   - key: DB_STATUS_TOKEN
     value: ""
   - key: FIREBASE_STATUS_TOKEN
@@ -37,8 +38,4 @@ services:
     value: 839322377597543
   - key: CLOUDINARY_API_SECRET
     value: s6K7FGz4TFZGhdXpzqKumY9Vmxw
-
-  disk:
-    name: data
-    mountPath: /var/data
-    sizeGB: 1
+  # Removed disk section: free plan has no persistent disk; using external Postgres instead.
