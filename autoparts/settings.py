@@ -107,11 +107,14 @@ if RAW_DATABASE_URL:
         )
     }
 else:
-    # Local fallback (persistent between runs on your machine)
+    # SQLite fallback. In production, consider pointing this to a persistent disk
+    # by setting SQLITE_PATH (e.g., /var/data/db.sqlite3 on Render with a mounted disk).
+    SQLITE_PATH = os.environ.get('SQLITE_PATH')
+    sqlite_name = Path(SQLITE_PATH) if SQLITE_PATH else (BASE_DIR / 'db.sqlite3')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': sqlite_name,
         }
     }
 
