@@ -151,9 +151,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "inventory" / "static",
-]
+# Let Django auto-discover app static directories (e.g., inventory/static/)
+# Avoid pointing STATICFILES_DIRS at an app's static path to prevent duplicates.
+# Optionally include a project-level "static" folder if it exists.
+PROJECT_STATIC_DIR = BASE_DIR / "static"
+STATICFILES_DIRS = [PROJECT_STATIC_DIR] if PROJECT_STATIC_DIR.exists() else []
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media files (uploads)
