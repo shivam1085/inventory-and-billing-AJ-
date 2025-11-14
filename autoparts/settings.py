@@ -111,10 +111,21 @@ else:
     # by setting SQLITE_PATH (e.g., /var/data/db.sqlite3 on Render with a mounted disk).
     SQLITE_PATH = os.environ.get('SQLITE_PATH')
     sqlite_name = Path(SQLITE_PATH) if SQLITE_PATH else (BASE_DIR / 'db.sqlite3')
+    # Ensure directory exists to avoid 'unable to open database file' errors.
+    try:
+        sqlite_dir = sqlite_name.parent
+        sqlite_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as _e:
+        # Don't crash settings import; migration will surface errors if path truly invalid.
+        pass
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': sqlite_name,
+            # Slightly increase timeout for potential disk latency on first mount
+            'OPTIONS': {
+                'timeout': 20,
+            },
         }
     }
 
